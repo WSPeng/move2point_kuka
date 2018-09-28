@@ -18,6 +18,7 @@ class Move2Point:
         self.position = np.zeros([3, 1])
         self.orientation = np.zeros([4, 1])
         self.velocity = np.zeros([3, 1])
+        self.position_goal = np.zeros([3, 1])
 
         # subscriber
         self.pose_sub = rospy.Subscriber('/lwr/ee_pose', Pose, self.update_pose)
@@ -32,10 +33,13 @@ class Move2Point:
 
     def compute_command(self):
         """ """
-        distance = LA.norm(-self.position)
+        distance = LA.norm(self.position_goal-self.position)
 
-        self.vel_d = 
-        self.omega_d =
+        B = np.identity(3)
+
+
+        self.vel_d = B.dot(L).dot(B.transpose())
+        self.omega_d = 
 
         return
 
@@ -63,16 +67,13 @@ class Move2Point:
 
     def move2goal(self):
         """ """
-        self.goal_pose = Pose()
-
         # Get the input from the user.
-        # self.goal_pose.x = input("Set your x goal: ")
-        # self.goal_pose.y = input("Set your y goal: ")
-        # self.goal_pose.y = input("Set your y goal: ")
+        self.position_goal[0] = input("Set your x goal: ")
+        self.position_goal[1] = input("Set your y goal: ")
+        self.position_goal[2] = input("Set your y goal: ")
 
         # Please, insert a number slightly greater than 0 (e.g. 0.01).
         distance_tolerance = input("Set your tolerance: ")
-
 
         # Running
         self.compute_command()
