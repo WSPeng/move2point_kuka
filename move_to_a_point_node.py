@@ -10,9 +10,9 @@ def main ():
     rospy.init_node('move2point', anonymous=True)
 
     # define the frequency
-    rate = rospy.Rate(10)
+    Move2Point.rate = rospy.Rate(10)
 
-    if not Move2Point.__init__():
+    if not Move2Point:
         return -1
     else:
         Move2Point.move2goal()
