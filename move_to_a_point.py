@@ -30,10 +30,10 @@ class Move2Point:
 
         # publisher
         self.vel_pub = rospy.Publisher('/lwr/joint_controllers/passive_ds_command_vel',
-                                       Twist, queue_size=10)
+                                       Twist, queue_size=1)
         self.ori_pub = rospy.Publisher('/lwr/joint_controllers/passive_ds_command_orient',
-                                       Quaternion, queue_size=10)
-        self.rate = rospy.Rate(10)
+                                       Quaternion, queue_size=1)
+        self.rate = rospy.Rate(200)
 
     def compute_command(self):
         """ """
@@ -45,9 +45,12 @@ class Move2Point:
         # print(distance_m)
         b_m = np.identity(3)
         l_m = np.identity(3)*10
-        l_m[2, 2] = 30
+        l_m[2, 2] = 100
 
-        self.vel_d = b_m.dot(l_m).dot(b_m.transpose()).dot(distance_m)
+        self.vel_d = 3.0*distance_m
+        if(LA.norm(self.vel_d)>0.3):
+            self.vel_d = self.vel_d*0.3/LA.norm(self.vel_d)
+        print(self.vel_d)
         self.omega_d = np.zeros([3, 1])
 
         # Desired quaternion to have the end effector looking down
@@ -63,19 +66,19 @@ class Move2Point:
         msg_desired_twist.linear.x = self.vel_d[0, 0]
         msg_desired_twist.linear.y = self.vel_d[1, 0]
         msg_desired_twist.linear.z = self.vel_d[2, 0]
-        msg_desired_twist.angular.x = float(self.omega_d[0, 0])
-        msg_desired_twist.angular.y = float(self.omega_d[1, 0])
-        msg_desired_twist.angular.z = float(self.omega_d[2, 0])
+        msg_desired_twist.angular.x = self.omega_d[0, 0]
+        msg_desired_twist.angular.y = self.omega_d[1, 0]
+        msg_desired_twist.angular.z = self.omega_d[2, 0]
 
         self.vel_pub.publish(msg_desired_twist)
 
         msg_desired_orientation = Quaternion()
 
         # print(float(self.orientation[0]))
-        msg_desired_orientation.w = float(self.orientation[0, 0])
-        msg_desired_orientation.x = float(self.orientation[1, 0])
-        msg_desired_orientation.y = float(self.orientation[2, 0])
-        msg_desired_orientation.z = float(self.orientation[3, 0])
+        msg_desired_orientation.w = 0
+        msg_desired_orientation.x = 0
+        msg_desired_orientation.y = 1
+        msg_desired_orientation.z = 0
 
         self.ori_pub.publish(msg_desired_orientation)
 
@@ -108,7 +111,7 @@ class Move2Point:
 
         # Running
 
-        while LA.norm(self.position_goal - self.position) >= distance_tolerance:
+        while not rospy.is_shutdown():
 
             # print(self.position_goal - self.position)
             print(LA.norm(self.position_goal - self.position))
@@ -116,15 +119,15 @@ class Move2Point:
             self.publish_data()
 
             self.rate.sleep()
+        rospy.spin()
 
         # Stopping our robot after the movement is over.
-        self.vel_d = np.zeros([3, 1])
+        # self.vel_d = np.zeros([3, 1])
         # self.omega_d = np.zeros([3, 1])
         # self.orientation = np.zeros([4, 1])
-        self.publish_data()
+        # self.publish_data()
 
         # If we press control + C, the node will stop.
-        rospy.spin()
 
 
 if __name__ == '__main__':
